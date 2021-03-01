@@ -42,6 +42,9 @@ def execute(video_file, config, weights, coco, output_file, debug = False):
     #Guardamos la hora en la que empieza la deteccion para posteriormente calcular el tiempo total de ejecucion
     start_time = time.time()
 
+    #Metricas
+    lost_frames = 0
+
     #Guardamos el numero de fotogramas totales para llevar un seguimiento
     total_frames = int(video_capure.get(cv2.CAP_PROP_FRAME_COUNT))
     actual_frame = 0
@@ -96,11 +99,16 @@ def execute(video_file, config, weights, coco, output_file, debug = False):
             if initial_lost_frames > 0:
                 for i in range(initial_lost_frames):
                     write_prediction(LOST, person_rectangle, output_stream)
+                    lost_frames += 1
                 initial_lost_frames = 0
 
         #Escribimos en el archivo de salida los datos necesarios
         prediction_name = PERSON if found_person else LOST
         write_prediction(prediction_name, person_rectangle, output_stream)
+
+        #Metricas
+        if not found_person:
+            lost_frames += 1
 
         #Escribimos por pantalla una barra de progreso
         print_progress_bar(actual_frame, total_frames, decimals=2)
@@ -125,7 +133,11 @@ def execute(video_file, config, weights, coco, output_file, debug = False):
     end_time = time.time()
     total_time = end_time - start_time
     percent = get_process_percent(actual_frame, total_frames, 2)
-    print(f'Tiempo de procesamiento: {total_time} en completar el {percent}%')
+    print(f'Tiempo de procesamiento YOLO: {total_time} segundos en completar el {percent}%')
+
+    #Metricas
+    lost_frames_percent = (float(lost_frames) / float(total_frames)) * 100
+    print(f'Porcentaje fotogramas perdidos: {lost_frames_percent}%')
 
     #En caso de que sea una prueba cerramos todas las ventanas que se hayan abierto
     if debug:

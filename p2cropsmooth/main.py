@@ -87,7 +87,8 @@ def smooth_damp_head_positions(head_positions, video_fps):
     #Ultima posicion para cogerla como referencia para calcular la siguiente
     last_smooth = Vector2D(head_positions[0].x, head_positions[0].y)
     #Velocidad de movimiento de la camara virtual
-    velocity = Vector2D(0, 0)
+    velocity_x = 0
+    velocity_y = 0
 
     #Ajustes para determinar la suavidad del resultado
     smooth_time = 0.50 # 0.085
@@ -95,8 +96,8 @@ def smooth_damp_head_positions(head_positions, video_fps):
 
     #Iteramos por cada posicion para realizar el seguimiento
     for position in head_positions:
-        smooth_x, velocity.x = smooth_damp(last_smooth.x, position.x, velocity.x, smooth_time, delta_time)
-        smooth_y, velocity.y = smooth_damp(last_smooth.y, position.y, velocity.y, smooth_time, delta_time)
+        smooth_x, velocity_x = smooth_damp(last_smooth.x, position.x, velocity_x, smooth_time, delta_time)
+        smooth_y, velocity_y = smooth_damp(last_smooth.y, position.y, velocity_y, smooth_time, delta_time)
 
         last_smooth = Vector2D(smooth_x, smooth_y)
         smooths.append(Vector2D(smooth_x, smooth_y))
