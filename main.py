@@ -1,15 +1,12 @@
 #Importa la libreria para obtener los argumentos necesarios
 import argparse
 #Acceso a variables usadas por el interpretador
-import sys, os
+import os
 
 #Imports para cada uno de los modulos
 import p1yolo
 import p2cropsmooth
 import p3video
-
-import cv2
-import ffmpeg
 
 #Mensaje con el modo de empleo
 USAGE = 'Modo de empleo: -v VÍDEO [OPCIÓN]... [FICHERO]...'
@@ -24,7 +21,7 @@ path = os.path.dirname(os.path.realpath(__file__)) + '/'
 
 #Array que contiene tuplas con los argumentos
 arguments = [
-    ('-v', '--video',    False,  'Ruta del video de entrada', path + '../VIDEOS/video4k.mp4'),
+    ('-v', '--video',    False,  'Ruta del video de entrada', path + './video4k.mp4'),
     ('-c', '--config',   False, 'path to yolo config file', path + '/p1yolo/cfg/yolov3-tiny.cfg'),
     ('-w', '--weights',  False, 'path to yolo pre-trained weights', path + '/p1yolo/weights/yolov3-tiny.weights'),
     ('-cl', '--classes', False, 'path to text file containing class names', path + '/p1yolo/cfg/coco.data'),
@@ -49,9 +46,9 @@ def main():
     #Cambiamos el directorio de trabajo a la ruta del programa para que funcionen las rutas relativas
     os.chdir(path)
 
-    #p1_code = p1yolo.execute(args.video, args.config, args.weights, args.classes, args.output1, True)
+    p1_code = p1yolo.execute(args.video, args.config, args.weights, args.classes, args.output1, True)
 
-    #p2_code = p2cropsmooth.execute(args.output1, args.output2, args.video)
+    p2_code = p2cropsmooth.execute(args.output1, args.output2, args.video)
     
     p3video.execute(args.video, args.output2, 720, 480, args.output3)
 

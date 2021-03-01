@@ -1,12 +1,11 @@
 #Controlar el tiempo que tarda en ejecutarse
 import time
 #Herramientas de vision por computador
-import cv2
-from pydarknet import Detector as YoloDetector, Image as YoloImage
-#Utiles
-from collections import namedtuple
+from cv2 import cv2
+import pydarknet as Yolo
+#from pydarknet import Detector as YoloDetector, Image as YoloImage
 #Utiles creados para el TFG
-from tfg_utils import print_progress_bar, get_process_percent
+from tfg_utils import print_progress_bar, get_process_percent, initialize_video, initialize_output, Vector2D, Rectangle
 
 #Constantes que definen como ha terminado el programa
 ERROR_VIDEO_FILE = 0
@@ -15,9 +14,6 @@ SUCCESS = 1
 #Constantes para la escritura del archivo de salida
 PERSON = 'person'
 LOST = 'lost'
-
-#Rectangulo obtenido de una prediccion
-Rectangle = namedtuple("Rectangle", "x y w h")
 
 #Ejecuta el programa principal
 def main():
@@ -37,7 +33,7 @@ def execute(video_file, config, weights, coco, output_file, debug = False):
     write_video_dimensions(video_capure, output_stream)
 
     #Inicializamos el detector con los parametros recibidos
-    detector = YoloDetector(bytes(config, encoding="utf-8"), bytes(weights, encoding="utf-8"), 0, bytes(coco, encoding="utf-8"))
+    detector = Yolo.Detector(bytes(config, encoding="utf-8"), bytes(weights, encoding="utf-8"), 0, bytes(coco, encoding="utf-8"))
 
     #Numero de fotogramas iniciales hasta que se encuentra la primera persona
     initial_lost_frames = 0
@@ -64,7 +60,7 @@ def execute(video_file, config, weights, coco, output_file, debug = False):
         found_person = False
 
         #Pasamos el detector de Yolo por el fotograma actual
-        yolo_frame = YoloImage(frame)
+        yolo_frame = Yolo.Image(frame)
         results = detector.detect(yolo_frame)
         del yolo_frame
 
@@ -145,18 +141,6 @@ def execute(video_file, config, weights, coco, output_file, debug = False):
 def draw_prediction(img, label, rect, color):
     cv2.rectangle(img, (rect.x, rect.y), (rect.x + rect.w, rect.y + rect.h), color, 2)
     cv2.putText(img, label, (rect.x - 10,rect.y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
-
-#Devuelve un stream en el que se puede escribir
-def initialize_output(output_file):
-    output = open(output_file, "w")
-    return output
-
-#Devuelve un caputurador de video para sacar los fotogramas del video
-def initialize_video(video_file):
-    capture = cv2.VideoCapture(video_file)
-    #En caso de que el capturador no haya podido abrir el video devolvemos None
-    if(not capture.isOpened()): return None
-    return capture
 
 #Escribe por la salida las dimensiones del video
 def write_video_dimensions(video_capure, output):

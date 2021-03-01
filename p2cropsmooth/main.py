@@ -1,10 +1,9 @@
 #Imports necesarios
-from collections import namedtuple
 import time
 #Herramientas de vision por computador
-import cv2
-
-import tfg_utils as utils
+from cv2 import cv2
+#Utlies comunes a todo el proyecto
+from tfg_utils import initialize_output, initialize_video, get_input_file_content, Vector2D, Rectangle, Max
 
 #Constantes que definen como ha terminado el programa
 ERROR_VIDEO_FILE = 0
@@ -13,55 +12,60 @@ SUCCESS = 1
 #Constante para aproximar la altura de la cabeza
 HUMAN_HEAD_RATIO = 7
 
-#Tuplas
-Vector2D = namedtuple("Vector2D", "x y")
-Rectangle = namedtuple("Rectangle", "x y w h")
-
 #Ejecuta el programa principal
 def main():
     return
 
+#Ejecuta el programa principal
 def execute(input_file, output_file, video_file = None):
-    input_file = open(input_file, "r")
-    text_lines = input_file.read().splitlines()
-
+    #Leemos el archivo de texto de entrada
+    text_lines = get_input_file_content(input_file)
+    #Obtenemos datos sobre el video original
     video_width, video_height, video_fps = parse_video_dimensions(text_lines[0])
 
+    #Parseamos las lineas de texto en tuplas de rectangulos para manipularlos
     rectangles = parse_rectangles(text_lines)
-
+    #Estimamos la posicion de la cabeza en cada uno de los rectangulos
     head_positions = get_head_centers(rectangles)
+    #Suavizamos las posiciones de la cabeza
     smooth_positions = smooth_damp_head_positions(head_positions, video_fps)
 
-    output = open(output_file, "w")
+    #Escribimos todas las posiciones suavizadas en el archivo de salida
+    write_output(output_file, smooth_positions)
 
-    for position in smooth_positions:
-        output.write(f'{position.x} {position.y}\n')
-
-    output.close()
-
-    if not video_file is None:
-        show_result_in_video(video_file, head_positions, smooth_positions, video_fps)
+    #Mostramos los resultados en pantalla (en caso de que haya un video de entrada)
+    show_result_in_video(video_file, head_positions, smooth_positions, video_fps)
     
+    #Se termina la ejecucion de manera satisfactoria
     return SUCCESS
 
+#Escribe el archivo de salida
+def write_output(output_file, smooth_positions):
+    #Inicializamos el archivo de salida
+    output = initialize_output(output_file)
+    #Escribimos todas las posiciones en el archivo de salida
+    for position in smooth_positions:
+        output.write(f'{position.x} {position.y}\n')
+    #Finalizamos el archivo de salida
+    output.close()
+
+#Devuelve los datos basicos del video guardados en el archivo (ancho, alto, fps)
 def parse_video_dimensions(string):
     split = string.split(" ")
     return float(split[0]), float(split[1]), float(split[2])
 
+#Array de rectangulos obtenidos del archivo de entrada
 def parse_rectangles(text_lines):
     rectangles = []
     for i in range(1, len(text_lines)):
         rectangles.append(parse_rectangle(text_lines[i]))
     return rectangles
 
+#Crea un rectangulo definido en un string (nombre, x, y, ancho, alto)
 def parse_rectangle(string):
     split = string.split(" ")
     rect = Rectangle(float(split[1]), float(split[2]), float(split[3]), float(split[4]))
     return rect
-
-#Estima el centro de la cabeza de la persona
-def aproximate_head_center(rect):
-    return Vector2D(rect.x + rect.w * 0.5, rect.y + rect.y / HUMAN_HEAD_RATIO)
 
 #Devuelve una lista de posiciones aproximadas de la cabeza
 def get_head_centers(rectangles):
@@ -71,25 +75,36 @@ def get_head_centers(rectangles):
         head_positions.append(head_center)
     return head_positions
 
+#Estima el centro de la cabeza de la persona
+def aproximate_head_center(rect):
+    return Vector2D(rect.x + rect.w * 0.5, rect.y + rect.y / HUMAN_HEAD_RATIO)
+
+#Interpreta una lista de posiciones y devuelve una camara virtual que las sigue
 def smooth_damp_head_positions(head_positions, video_fps):
-
+    #Resultado
     smooths = []
-    smooth_vector = Vector2D(head_positions[0].x, head_positions[0].y)
 
-    velocity_x = 0
-    velocity_y = 0
+    #Ultima posicion para cogerla como referencia para calcular la siguiente
+    last_smooth = Vector2D(head_positions[0].x, head_positions[0].y)
+    #Velocidad de movimiento de la camara virtual
+    velocity = Vector2D(0, 0)
 
+    #Ajustes para determinar la suavidad del resultado
     smooth_time = 0.50 # 0.085
     delta_time = 1 / video_fps
 
+    #Iteramos por cada posicion para realizar el seguimiento
     for position in head_positions:
-        smooth_x, velocity_x = smooth_damp(smooth_vector.x, position.x, velocity_x, smooth_time, delta_time)
-        smooth_y, velocity_y = smooth_damp(smooth_vector.y, position.y, velocity_y, smooth_time, delta_time)
+        smooth_x, velocity.x = smooth_damp(last_smooth.x, position.x, velocity.x, smooth_time, delta_time)
+        smooth_y, velocity.y = smooth_damp(last_smooth.y, position.y, velocity.y, smooth_time, delta_time)
 
-        smooth_vector = Vector2D(smooth_x, smooth_y)
+        last_smooth = Vector2D(smooth_x, smooth_y)
         smooths.append(Vector2D(smooth_x, smooth_y))
+
+    #Devolvemos el resultado
     return smooths
 
+#Algoritmo de suavizado de seguimiento basado en Spring Damp
 def smooth_damp(current, target, currentVelocity, smoothTime, deltaTime):
     smoothTime = Max(0.0001, smoothTime)
     num1 = 2 / smoothTime
@@ -109,19 +124,10 @@ def smooth_damp(current, target, currentVelocity, smoothTime, deltaTime):
 
     return num8, currentVelocity
 
-def Max(a, b):
-    if (a > b):
-        return a
-    return b
-
-#Devuelve un caputurador de video para sacar los fotogramas del video
-def initialize_video(video_file):
-    capture = cv2.VideoCapture(video_file)
-    #En caso de que el capturador no haya podido abrir el video devolvemos None
-    if(not capture.isOpened()): return None
-    return capture
-
+#Muestra una previsualizacion del resultado
 def show_result_in_video(video_file, head_positions, smooth_positions, video_fps):
+    if video_file is None:
+        return
     video_capure = initialize_video(video_file)
     if not video_capure is None:
         frame_index = 0
