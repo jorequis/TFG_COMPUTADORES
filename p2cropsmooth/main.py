@@ -23,6 +23,9 @@ def execute(input_file, output_file, video_file = None):
     #Obtenemos datos sobre el video original
     video_width, video_height, video_fps = parse_video_dimensions(text_lines[0])
 
+    #Guardamos la hora en la que empieza la deteccion para posteriormente calcular el tiempo total de ejecucion
+    start_time = time.time()
+
     #Parseamos las lineas de texto en tuplas de rectangulos para manipularlos
     rectangles = parse_rectangles(text_lines)
     #Estimamos la posicion de la cabeza en cada uno de los rectangulos
@@ -32,6 +35,11 @@ def execute(input_file, output_file, video_file = None):
 
     #Escribimos todas las posiciones suavizadas en el archivo de salida
     write_output(output_file, smooth_positions)
+
+    #Obtenemos el tiempo que se ha tardado en procesar el video
+    end_time = time.time()
+    total_time = end_time - start_time
+    print(f'Tiempo de procesamiento Smooth: {total_time}')
 
     #Mostramos los resultados en pantalla (en caso de que haya un video de entrada)
     show_result_in_video(video_file, head_positions, smooth_positions, video_fps)

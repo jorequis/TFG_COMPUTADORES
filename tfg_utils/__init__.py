@@ -70,7 +70,8 @@ def encode_h264(clip_video_file, original_video_file, output_file):
     wait_start_transcode(process)
     while not finish_transcoding:
         current_total_milliseconds = get_progress_line(process)
-        finish_transcoding = total_milliseconds == current_total_milliseconds
+        percent = float(get_process_percent(current_total_milliseconds, total_milliseconds))
+        finish_transcoding = percent >= 100
         print_progress_bar(current_total_milliseconds, total_milliseconds)
 
     print()

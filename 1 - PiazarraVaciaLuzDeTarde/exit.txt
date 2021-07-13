@@ -1,0 +1,8 @@
+Tiempo de procesamiento YOLO: 443.0489013195038 segundos en completar el 100.00%
+Porcentaje fotogramas perdidos: 0.946969696969697%
+Tiempo de procesamiento Smooth: 0.011097908020019531
+Recortando video original:
+ |████████████████████████████████████████████████████████████████████████████████████████████████████| 100.0%
+Transcodificando a H264:
+ |████████████████████████████████████████████████████████████████████████████████████████████████████| 100.0%
+Tiempo de procesamiento Final video: 59.87295174598694

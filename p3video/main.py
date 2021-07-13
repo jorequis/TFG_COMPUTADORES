@@ -42,6 +42,9 @@ def execute(video_file, input_file, output_width, output_height, output_file, de
     total_head_positions = len(head_positions)
     actual_frame = 0
 
+    #Guardamos la hora en la que empieza la deteccion para posteriormente calcular el tiempo total de ejecucion
+    start_time = time.time()
+
     print("Recortando video original:")
 
     while video_capure.isOpened():
@@ -86,6 +89,12 @@ def execute(video_file, input_file, output_width, output_height, output_file, de
     
     #Codificamos el video final con el video recortado sumado al audio del video original
     encode_h264(temp_file, video_file, output_file)
+
+    #Obtenemos el tiempo que se ha tardado en procesar el video
+    end_time = time.time()
+    total_time = end_time - start_time
+    print(f'Tiempo de procesamiento Final video: {total_time}')
+
 
 #Array de posiciones obtenidas del archivo de entrada
 def parse_positions(input_content):
